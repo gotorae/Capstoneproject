@@ -46,3 +46,27 @@ class Agent(models.Model):
         return f"{self.agent_name} {self.agent_surname}"
 
 
+from django.conf import settings
+
+class Upload(models.Model):
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT
+    )
+
+    file = models.FileField(upload_to="uploads/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    is_approved = models.BooleanField(default=False)
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="approved_uploads"
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    is_rejected = models.BooleanField(default=False)
+    reject_reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+

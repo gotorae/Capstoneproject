@@ -1,0 +1,28 @@
+<form method="get">
+    <fieldset class="module aligned">
+        <div class="form-row">
+            <label>Paypoint:</label>
+            <select name="paypoint" required>
+                <option value="">---------</option>
+                {% for p in paypoints %}
+                    <option value="{{ p.id }}"
+                        {% if p.id|stringformat:"s" == selected_paypoint %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ p.code }} – {{ p.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label>Billing Month:</label>
+            <input type="month" name="month" value="{{ month }}">
+        </div>
+
+        <div class="submit-row">
+            <input type="submit" value="Load Policies" class="default">
+        </div>
+    </fieldset>
+</form>

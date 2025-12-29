@@ -29,4 +29,7 @@ urlpatterns = [
     path('receipts/', include("receipts.urls")),
     path('auth/token/login/', obtain_auth_token, name='token-obtain'),
     path("api-auth/", include("rest_framework.urls")),
+    path("api/", include("billing.urls")),
+    path('api/commissions/', include('commissions.urls')),
 ]
+

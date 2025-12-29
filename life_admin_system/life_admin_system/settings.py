@@ -46,6 +46,12 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "django_filters",
+    "auditlog",
+    "import_export",
+    "claims",
+    "cancellations",
+    "billing",
+    "commissions",
 ]
 
 
@@ -161,3 +167,6 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
     ],
 }
+
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

@@ -11,6 +11,9 @@ from paypoints.models import Paypoint
 from django.core.exceptions import ValidationError
 from access.models import Administrator
 from django.conf import settings
+from auditlog.registry import auditlog
+from django.core.exceptions import ObjectDoesNotExist
+
 
 
 
@@ -80,7 +83,7 @@ class Policy(models.Model):
             return "Policy Lapsed"
         elif self.months_in_arrears <= 2 and self.months_paid >= 1:
             return "Policy Active"
-        elif self.months_in_arrears > 2 and self.months_paid < 1:
+        elif self.months_in_arrears > 0 and self.months_paid < 1:
             return "NTU Non Payment"
         else:
             return "Policy Accepted"
@@ -106,6 +109,121 @@ class Policy(models.Model):
     cover = models.PositiveIntegerField(choices=Cover.choices)
 
     
+
+
+    #cancellations 
+  
+
+    @property
+    def cancellation_status(self):
+        try:
+            cr = self.cancellation_request
+            if cr.status == "APPROVED":
+                return "Cancelled"
+            if cr.status == "REQUESTED":
+                return "Pending Approval"
+            return cr.status
+        except ObjectDoesNotExist:
+            return "Active"
+
+
+    @property
+    def cancellation_effective_date(self):
+        try:
+            return self.cancellation_request.effective_date
+        except ObjectDoesNotExist:
+            return None
+
+ 
+        # ------------------------------
+    # CLAIM INFORMATION
+    # ------------------------------
+    @property
+    def claim_status(self):
+        """Return claim status: 'Death', 'Pending', or 'Active'"""
+        approved_claim = self.claims.filter(status="APPROVED").first()
+        if approved_claim:
+            return "Death"
+
+        pending_claim = self.claims.filter(status="REQUESTED").first()
+        if pending_claim:
+            return "Pending"
+
+        return "Active"
+
+
+    @property
+    def claim_effective_date(self):
+        """Return the approved claim's date if exists"""
+        approved_claim = self.claims.filter(status="APPROVED").first()
+        if approved_claim and approved_claim.approved_at:
+            return approved_claim.approved_at.date()
+        return None
+
+
+    # ------------------------------
+    # OVERALL POLICY STATUS
+    # ------------------------------
+    @property
+    def overall_policy_status(self):
+        """
+        Determine overall status:
+        1️⃣ Claim (Death) overrides everything
+        2️⃣ Cancellation next
+        3️⃣ Policy lifecycle
+        4️⃣ Default Active
+        """
+        # 1️⃣ Check claims
+        if self.claims.filter(status="APPROVED").exists():
+            return "Death"
+
+        # 2️⃣ Check cancellation
+        try:
+            if self.cancellation_request.status == "APPROVED":
+                return "Cancelled"
+        except ObjectDoesNotExist:
+            pass
+
+        # 3️⃣ Check policy lifecycle
+        if self.policy_status in ["Policy Lapsed", "Policy Accepted", "NTU Non Payment"]:
+            return self.policy_status
+
+        # 4️⃣ Default
+        return "Active"
+
+
+    
+    def is_commissionable(self, month):
+        """
+        Returns True if this policy is eligible for commission in the given month.
+        Only Active or Death policies count. Cancelled, NTU, Lapsed, or Accepted do not.
+        """
+        # 1️⃣ Must have an agent
+        if not self.agent_id:
+            return False
+
+        # 2️⃣ Start date must be before or equal to the given month
+        if not self.start_date or self.start_date > month:
+            return False
+
+        # 3️⃣ Must not be cancelled
+        try:
+            if self.cancellation_request.status == "APPROVED":
+                return False
+        except ObjectDoesNotExist:
+            pass
+
+        # 4️⃣ Only Active or Death policies
+        if self.overall_policy_status not in ["Active", "Death"]:
+            return False
+
+        return True
+
+
+
+        
+
+
 
     
     def clean(self):
@@ -195,6 +313,10 @@ class Policy(models.Model):
         return self.contract_id
 
 
+
+
+
+auditlog.register(Policy)
 
 
 
