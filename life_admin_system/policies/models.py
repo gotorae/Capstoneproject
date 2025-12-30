@@ -33,6 +33,8 @@ class Policy(models.Model):
 
     
     proposal_sign_date = models.DateField(validators=[proposal_sign_date])
+    beneficiary_name = models.CharField(max_length=50, null=True, blank=True)
+    beneficiary_id = models.CharField(max_length=50, null=True, blank=True)
 
     # 2) Attach the correct validator
     start_date = models.DateField(validators=[validate_first_day])
@@ -311,6 +313,34 @@ class Policy(models.Model):
 
     def __str__(self):
         return self.contract_id
+    
+
+from django.conf import settings
+
+class Upload(models.Model):
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='policies_aproved_uploadss'
+    )
+
+    file = models.FileField(upload_to="uploads/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    is_approved = models.BooleanField(default=False)
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="policy_approved_uploads"
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    is_rejected = models.BooleanField(default=False)
+    reject_reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 
 
 

@@ -26,3 +26,18 @@ class ClientDetailAPIView(generics.UpdateAPIView):
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
     # Optional but explicit:
+
+
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+from .models import Upload
+
+@login_required
+def upload_file(request):
+    if request.method == "POST":
+        Upload.objects.create(
+            file=request.FILES["file"],
+            uploaded_by=request.user
+        )
+        return redirect("upload_success")
+

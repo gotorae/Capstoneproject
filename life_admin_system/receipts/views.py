@@ -1,33 +1,42 @@
-from rest_framework import generics, filters
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework import generics, permissions
+from .models import PremiumReceipt, Upload
+from .serializers import PremiumReceiptSerializer, UploadSerializer
 
-from .models import PremiumReceipt
-from .serializers import PremiumReceiptSerializer
+# -----------------------------
+# PremiumReceipt Endpoints
+# -----------------------------
 
-
-class ReceiptListCreateAPIView(generics.ListCreateAPIView):
+class PremiumReceiptListCreateAPIView(generics.ListCreateAPIView):
     queryset = PremiumReceipt.objects.all()
     serializer_class = PremiumReceiptSerializer
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
-    # If you want GET list without login, uncomment the next line:
-    # permission_classes = [IsAuthenticatedOrReadOnly]
-    # If you want everything to require login, use:
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["policy", 'receipt_number', 'amount_received', 'date_received']
-    ordering_fields = ["policy", 'receipt_number', 'amount_received', 'date_received']
+    def perform_create(self, serializer):
+        serializer.save(receipted_by=self.request.user)
 
 
-class ReceiptDetailAPIView(generics.UpdateAPIView):
+class PremiumReceiptRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = PremiumReceipt.objects.all()
     serializer_class = PremiumReceiptSerializer
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-    # Optional but explicit:
+    permission_classes = [permissions.IsAuthenticated]
 
 
+# -----------------------------
+# Upload Endpoints
+# -----------------------------
+
+class UploadListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Upload.objects.all()
+    serializer_class = UploadSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)
 
 
-# Create your views here.
+class UploadRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Upload.objects.all()
+    serializer_class = UploadSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+

@@ -11,10 +11,17 @@ from django.conf import settings
 
 
 class ClaimAdmin(admin.ModelAdmin):
-    list_disply = ['policy', 'claimant', 'account_number', 'burial order','death_certificate',
-                       'claim_form', 'requested_at', 'approved_at', 'approved_by']
+    list_disply = ['policy', 'claimant','bank_name','bank_branch', 'account_number', 'burial order','death_certificate',
+                       'claim_form', ]
     list_filter = ['policy']
     search_fields = ['policy']
+
+
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:
+            obj.approved_by = request.user
+        super().save_model(request, obj, form, change)
+
 
 admin.site.register(Claim, ClaimAdmin)
         
@@ -25,9 +32,11 @@ class ClaimRequestAdmin(admin.ModelAdmin):
     list_display = (
         "policy",
         "claimant",
+        "bank_name",
+        "bank_branch",
         "account_number",
         "requested_at",
-        "status",
+        
     )
 
     def get_queryset(self, request):
@@ -50,8 +59,10 @@ class ClaimApprovalAdmin(admin.ModelAdmin):
     list_display = (
         "policy",
         "claimant",
+        "bank_name",
+        "bank_branch",
         "account_number",
-        "requested_at",
+        
     )
 
     actions = ["approve_claim"]

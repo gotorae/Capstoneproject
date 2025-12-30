@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-
+from auditlog.registry import auditlog
 from policies.models import Policy
 
 
@@ -21,12 +21,10 @@ class Claim(models.Model):
         related_name="claims"
     )
 
-    claimant = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name="claims"
-    )
+    claimant = models.CharField(max_length=100, null=True, blank=True)
 
+    bank_name = models.CharField(max_length=50, null=True, blank=True)
+    bank_branch= models.CharField(max_length=50, null=True, blank=True)
     account_number = models.CharField(max_length=30)
 
     burial_order = models.FileField(
@@ -52,14 +50,15 @@ class Claim(models.Model):
         db_index=True
     )
 
-    requested_at = models.DateTimeField(auto_now_add=True)
-    approved_at = models.DateTimeField(null=True, blank=True)
+    requested_at = models.DateTimeField(default=timezone.now, editable=False)
+    approved_at = models.DateTimeField(default=timezone.now ,null=True, blank=True, editable=False)
     approved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.PROTECT,
-        related_name="approved_claims"
+        related_name="approved_claims",
+        editable=False
     )
 
     # -------------------------
@@ -110,3 +109,6 @@ class PendingClaimApproval(Claim):
         verbose_name_plural = "Claim Approvals"
 
 
+auditlog.register(Claim)
+auditlog.register(PendingClaimApproval)
+auditlog.register(PendingClaimRequest)

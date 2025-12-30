@@ -51,7 +51,8 @@ from django.conf import settings
 class Upload(models.Model):
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT
+        on_delete=models.PROTECT,
+        editable=False
     )
 
     file = models.FileField(upload_to="uploads/")
@@ -63,7 +64,8 @@ class Upload(models.Model):
         null=True,
         blank=True,
         on_delete=models.PROTECT,
-        related_name="approved_uploads"
+        related_name="approved_uploads",
+        editable=False
     )
     approved_at = models.DateTimeField(null=True, blank=True)
     is_rejected = models.BooleanField(default=False)

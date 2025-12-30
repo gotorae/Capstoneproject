@@ -10,6 +10,8 @@ class AgentAdminModel(admin.ModelAdmin):
     list_filter = ['agent_code', 'agent_surname', 'branch']
     search_fields = ['agent_code', 'agent_surname', 'branch']
 
+    
+
 
 admin.site.register(Agent, AgentAdminModel)
 
@@ -24,6 +26,13 @@ class UploadAdmin(admin.ModelAdmin):
         if not request.user.is_superuser:
             return ("is_approved", "approved_by", "approved_at", "is_rejected", "reject_reason")
         return ()
+    
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:
+            obj.uploaded_by = request.user
+            obj.approved_by = request.user
+        super().save_model(request, obj, form, change)
+
 
     @admin.action(description="Approve selected uploads")
     def approve_uploads(self, request, queryset):

@@ -1,8 +1,17 @@
 from django.urls import path
-from .views import ReceiptDetailAPIView, ReceiptListCreateAPIView
+from .views import (
+    PremiumReceiptListCreateAPIView,
+    PremiumReceiptRetrieveUpdateDestroyAPIView,
+    UploadListCreateAPIView,
+    UploadRetrieveUpdateDestroyAPIView,
+)
 
 urlpatterns = [
-    path("create/", ReceiptListCreateAPIView.as_view(), name="create"),
-    path("update/<int:pk>/", ReceiptDetailAPIView.as_view(), name="update"),
-    path("view/", ReceiptListCreateAPIView.as_view(), name="view"),
+    # PremiumReceipt endpoints
+    path('receipts/', PremiumReceiptListCreateAPIView.as_view(), name='receipt-list-create'),
+    path('receipts/<int:pk>/', PremiumReceiptRetrieveUpdateDestroyAPIView.as_view(), name='receipt-detail'),
+
+    # Upload endpoints
+    path('uploads/', UploadListCreateAPIView.as_view(), name='upload-list-create'),
+    path('uploads/<int:pk>/', UploadRetrieveUpdateDestroyAPIView.as_view(), name='upload-detail'),
 ]
