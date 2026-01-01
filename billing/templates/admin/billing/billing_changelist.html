@@ -1,0 +1,56 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block content %}
+<h2>Request Billing</h2>
+
+<form method="get" action="">
+    <div style="margin-bottom: 1em;">
+        <label for="paypoint">Select Paypoint:</label>
+        <select name="paypoint" id="paypoint">
+            <option value="">--- Select ---</option>
+            {% for pp in paypoints %}
+                <option value="{{ pp.id }}"
+                    {% if pp.id|stringformat:"s" == request.GET.paypoint %}selected{% endif %}>
+                    {{ pp.paypoint_name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div style="margin-bottom: 1em;">
+        <label for="month">Select Month:</label>
+        <input type="month" name="month" id="month"
+               value="{{ request.GET.month }}">
+    </div>
+
+    <button type="submit" class="default">Filter</button>
+</form>
+
+<hr>
+
+{% if policies %}
+<table class="adminlist">
+    <thead>
+        <tr>
+            <th>Policy Number</th>
+            <th>Client Name</th>
+            <th>Paypoint</th>
+            <th>Premium Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for policy in policies %}
+        <tr>
+            <td>{{ policy.policy_number }}</td>
+            <td>{{ policy.client.name }}</td>
+            <td>{{ policy.paypoint.paypoint_name }}</td>
+            <td>{{ policy.premium_amount }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No policies found for selected filters.</p>
+{% endif %}
+{% endblock %}
