@@ -61,16 +61,17 @@ class Claim(models.Model):
         editable=False
     )
 
+    reject_reason = models.TextField(blank=True, null=True)
+
+
     # -------------------------
     # VALIDATION
     # -------------------------
     def clean(self):
-        # Only ACTIVE policies can claim
-        if self.policy.policy_status != "Policy Active":
+        if self.policy.overall_policy_status != "Active":
             raise ValidationError(
                 "Claims can only be submitted for ACTIVE policies."
             )
-
         # At least one supporting document is required
         if not self.burial_order and not self.death_certificate:
             raise ValidationError(
@@ -90,8 +91,22 @@ class Claim(models.Model):
         self.approved_by = approver
         self.save()
 
+
+    def reject(self, approver, reason=""):
+        self.status = ClaimStatus.REJECTED
+        self.approved_by = approver
+        self.approved_at = timezone.now()
+        self.reject_reason = reason
+        self.save()
+
     def __str__(self):
         return f"Claim #{self.id} - {self.policy.contract_id}"
+    
+
+
+
+    
+
     
 
 

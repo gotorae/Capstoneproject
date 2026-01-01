@@ -449,3 +449,195 @@ urlpatterns = [
 ```
 
 ---
+USERS CREATE 
+
+maro@gmail.com
+Maro123@#$ administrator
+
+pharo@gmail.com
+pharo123@#$  supervisior
+
+
+
+#testing end points 
+# Uploads 
+http://127.0.0.1:8000/agents/uploads/
+
+
+# Update
+http://127.0.0.1:8000/agents/agents/4/
+
+
+# Create
+http://127.0.0.1:8000/agents/agents/
+
+# Export
+
+GET http://127.0.0.1:8000/agents/agents/export?format=csv
+GET http://127.0.0.1:8000/agents/agents/export?format=xlsx
+
+
+
+paypoints end points 
+
+# create 
+http://127.0.0.1:8000/paypoints/create/
+
+
+# update
+http://127.0.0.1:8000/paypoints/update/1/ 
+
+
+# view 
+http://127.0.0.1:8000/paypoints/view/
+
+
+
+receipts end points 
+
+# create
+http://127.0.0.1:8000/receipts/receipts/
+
+
+uploads
+# view all
+http://127.0.0.1:8000/receipts/uploads/files/
+
+
+# create receipts uploads
+http://127.0.0.1:8000/receipts/uploads/
+
+
+# approve or reject uploads 
+http://127.0.0.1:8000/receipts/uploads/7/approve/
+
+
+Policies
+
+# create
+http://127.0.0.1:8000/policies/create/
+
+# view all policies
+http://127.0.0.1:8000/policies/view/
+
+# create receipts uploads
+http://127.0.0.1:8000/policies/uploads/
+
+# approve or reject uploads 
+http://127.0.0.1:8000/policies/uploads/7/approve/
+
+# view all uploads
+http://127.0.0.1:8000/policies/uploads/files/
+
+
+
+clients
+
+# create
+http://127.0.0.1:8000/clients/create/
+
+# view all policies
+http://127.0.0.1:8000/clients/view/
+
+# create receipts uploads
+http://127.0.0.1:8000/clients/uploads/
+
+# approve or reject uploads 
+http://127.0.0.1:8000/clients/uploads/7/approve/
+
+# view all uploads
+http://127.0.0.1:8000/clients/uploads/files/
+
+
+## agents ##
+
+# create
+http://127.0.0.1:8000/agents/create/
+
+# view all policies
+http://127.0.0.1:8000/agents/view/
+
+# create receipts uploads
+http://127.0.0.1:8000/agents/uploads/
+
+# approve or reject uploads 
+http://127.0.0.1:8000/agents/uploads/7/approve/
+
+# view all uploads
+http://127.0.0.1:8000/agents/uploads/files/
+
+
+
+
+cancellations
+
+
+# request
+http://127.0.0.1:8000/cancellations/cancellations/request/
+
+
+# view my cancellations
+http://127.0.0.1:8000/cancellations/cancellations/my/
+
+# view all cancellation
+http://127.0.0.1:8000/cancellations/cancellations/
+
+# approve all cancellations
+http://127.0.0.1:8000/cancellations/cancellations/2/approve/
+
+
+
+
+claims we are done
+
+
+# claim request 
+
+http://127.0.0.1:8000/claims/claims/submit/
+
+
+# view claims
+http://127.0.0.1:8000/claims/claims/pending/
+
+
+# claims approvals 
+http://127.0.0.1:8000/claims/claims/6/approve/
+
+
+commissions
+
+# run commissions all
+http://127.0.0.1:8000/commissions/run/
+
+
+
+# run commission by agent
+http://127.0.0.1:8000/commissions/commissions/statement/?agent=tsitsi&month=2026-01
+
+
+
+# view commissions
+http://127.0.0.1:8000/commissions/commissions/
+
+
+# export pdf 
+http://127.0.0.1:8000/commissions/commissions/
+
+# export email
+http://127.0.0.1:8000/commissions/commissions/statement/?agent_code=AG001&month=2025-12&export=email
+
+
+
+billing 
+
+
+# view billing 
+http://127.0.0.1:8000/billing/billing-records/
+
+
+# view billing by paypoint
+ http://localhost:8000/billing/billing-records/statement/?paypoint=feeder&month=2026-01
+
+
+# export to pdf 
+http://localhost:8000/billing/billing-records/statement/?paypoint=feeder&month=2026-01&export=pdf

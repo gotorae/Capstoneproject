@@ -1,6 +1,7 @@
 
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.utils import timezone
 
 
 class ChiefUnderwriter(BaseUserManager):
@@ -44,7 +45,7 @@ class Administrator(AbstractBaseUser, PermissionsMixin):
     dob = models.DateField(null=True, blank=True)
     profile_photo = models.ImageField(upload_to="profile_photos/", null=True, blank=True)
 
-    date_created = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(default=timezone.now)
 
     # Core flags Django expects
     is_active = models.BooleanField(default=True)

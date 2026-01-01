@@ -4,7 +4,10 @@ from .views import (
     PolicyListCreateAPIView,
     PolicyExportCSVAPIView,
     PolicyExportExcelAPIView,
-    upload_file,
+    UploadListAllAPIView,
+    UploadListCreateAPIView,
+    UploadRetrieveUpdateDestroyAPIView,
+    ApproveUploadAPIView,
 )
 
 urlpatterns = [
@@ -16,5 +19,8 @@ urlpatterns = [
     path("export/csv/", PolicyExportCSVAPIView.as_view(), name="policy-export-csv"),
     path("export/excel/", PolicyExportExcelAPIView.as_view(), name="policy-export-excel"),
 
-    path("upload/success/", upload_file, name="upload_success"),
+    path('uploads/', UploadListCreateAPIView.as_view(), name='upload-list-create'),
+    path('uploads/<int:pk>/', UploadRetrieveUpdateDestroyAPIView.as_view(), name='upload-detail'),
+    path('uploads/<int:pk>/approve/', ApproveUploadAPIView.as_view()),
+    path('uploads/files/', UploadListAllAPIView.as_view(), name='uploads-all'),
 ]

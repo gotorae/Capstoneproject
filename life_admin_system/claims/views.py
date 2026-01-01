@@ -1,58 +1,48 @@
-from rest_framework import status, generics
-from rest_framework.views import APIView
+from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
-from django.core.exceptions import ValidationError
-
-from claims.models import Claim, ClaimStatus
-from policies.models import Policy
-from .serializers import (
-    ClaimCreateSerializer,
-    ClaimApprovalSerializer,
-)
+from .models import Claim, ClaimStatus
+from .serializers import ClaimSerializer, ClaimApprovalSerializer
 from .permissions import IsManager
 
+
+
+
+
 class SubmitClaimAPIView(generics.CreateAPIView):
-    serializer_class = ClaimCreateSerializer
+    serializer_class = ClaimSerializer
 
     def perform_create(self, serializer):
-        policy = serializer.validated_data["policy"]
-
-        if policy.status != Policy.PolicyState.ACTIVE:
-            raise ValidationError(
-                "Claims can only be submitted for ACTIVE policies."
-            )
-
-        serializer.save(
-            claimant=self.request.user,
-            status=ClaimStatus.REQUESTED
-        )
+        serializer.save(claimant=self.request.user)
 
 
 class PendingClaimsAPIView(generics.ListAPIView):
     permission_classes = [IsManager]
+    serializer_class = ClaimSerializer
+    ordering_fields = ["requested_at", "id"]
+    ordering = ["-requested_at"]
 
     def get_queryset(self):
         return Claim.objects.filter(
             status=ClaimStatus.REQUESTED
         )
 
-    def list(self, request):
-        data = [
-            {
-                "id": c.id,
-                "policy": c.policy.contract_id,
-                "claimant": str(c.claimant),
-                "account_number": c.account_number,
-                "requested_at": c.requested_at,
-            }
-            for c in self.get_queryset()
-        ]
-        return Response(data)
 
 
 class ApproveClaimAPIView(APIView):
     permission_classes = [IsManager]
+    serializer_class = ClaimApprovalSerializer
+
+    def get(self, request, pk):
+        claim = get_object_or_404(Claim, pk=pk)
+
+        return Response({
+            "claim_id": claim.id,
+            "policy": claim.policy.contract_id,
+            "status": claim.status,
+            "requested_at": claim.requested_at,
+        })
 
     def post(self, request, pk):
         claim = get_object_or_404(Claim, pk=pk)
@@ -60,12 +50,26 @@ class ApproveClaimAPIView(APIView):
         serializer = ClaimApprovalSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        claim.approve(approver=request.user)
+        action = serializer.validated_data["action"]
+
+        if action == "approve":
+            claim.approve(approver=request.user)
+            message = "Claim approved. Payment requisition sent."
+
+        else:  # reject
+            claim.reject(
+                approver=request.user,
+                reason=serializer.validated_data.get(
+                    "reject_reason", "Rejected by manager"
+                )
+            )
+            message = "Claim rejected."
 
         return Response(
-            {"detail": "Claim approved. Payment requisition sent."},
+            {
+                "status": action,
+                "message": message,
+                "claim_id": claim.id
+            },
             status=status.HTTP_200_OK
         )
-from django.shortcuts import render
-
-# Create your views here.

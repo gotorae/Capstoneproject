@@ -1,9 +1,12 @@
-from rest_framework import generics, filters
+from rest_framework import generics, filters, status
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 
 from .models import Paypoint
 from .serializers import PaypointSerializers
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+
 
 
 class PaypointListCreateAPIView(generics.ListCreateAPIView):
@@ -20,9 +23,19 @@ class PaypointListCreateAPIView(generics.ListCreateAPIView):
     ordering_fields = ["paypoint_code", "paypoint_name", "date_joined"]
 
 
-class PaypointDetailAPIView(generics.UpdateAPIView):
+
+
+class PaypointDetailAPIView(generics.RetrieveUpdateAPIView):
     queryset = Paypoint.objects.all()
     serializer_class = PaypointSerializers
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    # Optional but explicit:
+
+
+
+
+
+
+
+
+

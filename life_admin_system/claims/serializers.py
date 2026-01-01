@@ -1,25 +1,32 @@
 from rest_framework import serializers
 from claims.models import Claim
+from rest_framework import serializers
+from django.core.exceptions import ValidationError as DjangoValidationError
+from .models import Claim
 
 
-class ClaimCreateSerializer(serializers.ModelSerializer):
+class ClaimSerializer(serializers.ModelSerializer):
     class Meta:
         model = Claim
-        fields = (
-            "policy",
-            "account_number",
-            "burial_order",
-            "death_certificate",
-            "claim_form",
-        )
+        fields = "__all__"
 
-    def validate(self, attrs):
-        if not attrs.get("burial_order") and not attrs.get("death_certificate"):
-            raise serializers.ValidationError(
-                "Burial order or death certificate is required."
-            )
-        return attrs
+    def create(self, validated_data):
+        claim = Claim(**validated_data)
 
+        try:
+            claim.full_clean()  # model-level validation
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.message_dict or e.messages)
+
+        claim.save()
+        return claim
+
+
+from rest_framework import serializers
 
 class ClaimApprovalSerializer(serializers.Serializer):
-    approve = serializers.BooleanField(default=True)
+    action = serializers.ChoiceField(choices=["approve", "reject"])
+    reject_reason = serializers.CharField(
+        required=False,
+        allow_blank=True
+    )

@@ -12,6 +12,11 @@ class AdministratorAdmin(UserAdmin):
     list_display = ("email", "first_name", "last_name", "is_staff", "is_active")
     list_filter = ("is_staff", "is_superuser", "is_active")
 
+
+    #  Non-editable fields MUST be in readonly_fields
+    readonly_fields = ("date_created", "last_login")
+
+
     # --- Make UserAdmin work with email instead of username ---
     ordering = ("email",)
     search_fields = ("email", "first_name", "last_name")
@@ -34,3 +39,8 @@ class AdministratorAdmin(UserAdmin):
     )
 
     # If your model has these    # If your model has these as auto fields / from AbstractBaseUser:
+
+
+
+
+

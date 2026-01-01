@@ -3,7 +3,8 @@ from .views import (
     PremiumReceiptListCreateAPIView,
     PremiumReceiptRetrieveUpdateDestroyAPIView,
     UploadListCreateAPIView,
-    UploadRetrieveUpdateDestroyAPIView,
+    UploadRetrieveUpdateDestroyAPIView, ApproveUploadAPIView, UploadListAllAPIView
+    
 )
 
 urlpatterns = [
@@ -14,4 +15,8 @@ urlpatterns = [
     # Upload endpoints
     path('uploads/', UploadListCreateAPIView.as_view(), name='upload-list-create'),
     path('uploads/<int:pk>/', UploadRetrieveUpdateDestroyAPIView.as_view(), name='upload-detail'),
+    path('uploads/<int:pk>/approve/', ApproveUploadAPIView.as_view()),
+    path('uploads/files/', UploadListAllAPIView.as_view(), name='uploads-all'),
+
+
 ]

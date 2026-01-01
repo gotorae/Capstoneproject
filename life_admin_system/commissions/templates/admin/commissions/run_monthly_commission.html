@@ -1,12 +1,35 @@
 {% extends "admin/base_site.html" %}
+
 {% block content %}
-<h1>Run Monthly Commission</h1>
+<h1>Run Monthly Commissions</h1>
 
 <form method="post">
   {% csrf_token %}
-  {{ form.as_p }}
+
+  <label for="month">Select Month:</label>
+  <input type="month" name="month" id="month" required>
+
+  <label for="agent">Select Agent (or All Agents):</label>
+  <select name="agent_id" id="agent">
+    <option value="">All Agents</option>
+    {% for agent in agents %}
+      <option value="{{ agent.id }}">{{ agent.agent_code }} - {{ agent.agent_name }} {{ agent.agent_surname }}</option>
+    {% endfor %}
+  </select>
+
   <input type="submit" value="Run Commission" class="default">
 </form>
 
+{% if messages %}
+  <ul>
+    {% for message in messages %}
+      <li {% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
 <p><a href="../">← Back to commissions</a></p>
 {% endblock %}
+
+
+

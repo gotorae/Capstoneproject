@@ -1,14 +1,20 @@
-from rest_framework import generics, filters
+from rest_framework import generics, filters, status, permissions
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.response import Response
+from .models import Policy, Upload
+from .serializers import PolicySerializer, UploadSerializer, UploadDecisionSerializer
+from django.utils import timezone
+from rest_framework.views import APIView
+from django.http import HttpResponse
+import csv
+import openpyxl
 
-from .models import Policy
-from .serializers import PolicySerializers
 
 
 class PolicyListCreateAPIView(generics.ListCreateAPIView):
     queryset = Policy.objects.all()
-    serializer_class = PolicySerializers
+    serializer_class = PolicySerializer
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     # If you want GET list without login, uncomment the next line:
     # permission_classes = [IsAuthenticatedOrReadOnly]
@@ -22,36 +28,106 @@ class PolicyListCreateAPIView(generics.ListCreateAPIView):
 
 class PolicyDetailAPIView(generics.UpdateAPIView):
     queryset = Policy.objects.all()
-    serializer_class = PolicySerializers
+    serializer_class = PolicySerializer
     authentication_classes = [SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
     # Optional but explicit:
 
 # Create your views here.
+# -----------------------------
+# Upload Endpoints
+# -----------------------------
+
+class UploadListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Upload.objects.all()
+    serializer_class = UploadSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)
 
 
-from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
-from .models import Upload
+class UploadRetrieveUpdateDestroyAPIView(
+    generics.RetrieveUpdateDestroyAPIView
+):
+    queryset = Upload.objects.all()
+    serializer_class = UploadSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-@login_required
-def upload_file(request):
-    if request.method == "POST":
-        Upload.objects.create(
-            file=request.FILES["file"],
-            uploaded_by=request.user
-        )
-        return redirect("upload_success")
+
+# -----------------------------
+# Upload Approval Endpoint
+# (Browsable API WILL show form)
+# -----------------------------
+
+class ApproveUploadAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UploadDecisionSerializer
+
+    def get(self, request, pk):
+        upload = Upload.objects.get(pk=pk)
+        return Response({
+            "id": upload.id,
+            "file": upload.file.url if upload.file else None,
+            "is_approved": upload.is_approved,
+            "is_rejected": upload.is_rejected,
+            "reject_reason": upload.reject_reason,
+        })
+
+    def post(self, request, pk):
+        upload = Upload.objects.get(pk=pk)
+        serializer = UploadDecisionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        action = serializer.validated_data['action']
+
+        if action == 'approve':
+            upload.is_approved = True
+            upload.is_rejected = False
+            upload.reject_reason = ""
+            upload.approved_by = request.user
+            upload.approved_at = timezone.now()
+            message = "File has been successfully approved"
+
+        else:  # reject
+            upload.is_rejected = True
+            upload.is_approved = False
+            upload.approved_by = None
+            upload.approved_at = None
+            upload.reject_reason = serializer.validated_data.get(
+                'reject_reason', 'Rejected by approver'
+            )
+            message = "File has been successfully rejected the file"
+
+        upload.save()
+
+        return Response(
+    {
+        "status": action,
+        "message": message,
+        "upload_id": upload.id,
+        "links": {
+            "view_all_files": request.build_absolute_uri("/receipts/uploads/files/"),
+        }
+    },
+    status=status.HTTP_200_OK
+)
+
+
+
+
+class UploadListAllAPIView(generics.ListAPIView):
+    """
+    List all uploads with file URLs and approval status.
+    """
+    queryset = Upload.objects.all().order_by('-uploaded_at')
+    serializer_class = UploadSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
     
 
 
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
-from django.http import HttpResponse
-import csv
-import openpyxl
-from .models import Policy
+
 
 
 class PolicyExportCSVAPIView(APIView):

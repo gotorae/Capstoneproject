@@ -1,4 +1,3 @@
-
 # commissions/views.py
 from datetime import date
 from decimal import Decimal
@@ -20,6 +19,7 @@ from .serializers import CommissionRecordSerializer
 
 RATE = Decimal("0.10")  # 10%
 
+
 class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Endpoints:
@@ -33,7 +33,7 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
                 .select_related("policy", "policy__client", "agent")
                 .order_by("policy__contract_id", "commission_month"))
 
-    # ---- helpers (mirroring billing style) ----
+    # ---- helpers ----
     @staticmethod
     def _first_of_month(d: date) -> date:
         return date(d.year, d.month, 1)
@@ -67,28 +67,28 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
             return Decimal("0.00")
         return (cp / Decimal(months)).quantize(Decimal("0.01"))
 
-    @staticmethod
-    def _is_active(policy: Policy) -> bool:
-        return getattr(policy, "overall_policy_status", "") == "Active"
-
-    # ---- CSV/PDF builders (same layout as your sample) ----
+    # ---- CSV/PDF builders ----
     def _build_rows_for_agent_month(self, agent: Agent, month_start: date, save=False):
         rows = []
         tot_prem = Decimal("0.00")
         tot_comm = Decimal("0.00")
 
-        policies = (Policy.objects
-                    .select_related("client", "paypoint", "agent")
-                    .filter(agent=agent)
-                    .order_by("contract_id"))
+        # DB-level filters
+        policies = (
+            Policy.objects
+            .select_related("client", "paypoint", "agent")
+            .filter(agent=agent)
+            .filter(start_date__lte=month_start)  # started before commission month
+            .filter(cancellation_request__status__isnull=True)  # not cancelled
+            .order_by("contract_id")
+        )
 
-        for p in policies:
-            if not self._is_active(p):
-                continue
+        # Filter commissionable policies in Python
+        commissionable_policies = [p for p in policies if p.is_commissionable(month_start)]
 
+        for p in commissionable_policies:
             monthly = self._monthly_rate(p)
             commission_due = (monthly * RATE).quantize(Decimal("0.01"))
-            prem = Decimal(p.contract_premium or 0)
 
             rows.append({
                 "contract_id": p.contract_id,
@@ -96,7 +96,7 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
                 "status": getattr(p, "overall_policy_status", ""),
                 "agent_code": agent.agent_code,
                 "agent_name": f"{agent.agent_name} {agent.agent_surname}",
-                "contract_premium": float(monthly),   # show monthly premium to match sample (0.5, 1.0, etc.)
+                "contract_premium": float(monthly),
                 "commission_due": float(commission_due),
             })
 
@@ -104,7 +104,6 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
             tot_comm += commission_due
 
             if save:
-                # persist minimal record for arrears-friendly history
                 CommissionRecord.objects.get_or_create(
                     policy=p,
                     agent=agent,
@@ -118,11 +117,11 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
         buf = StringIO()
         w = csv.writer(buf)
         w.writerow(["Agent_code", agent_code])
-        w.writerow(["agent_name", agent_name])
+        w.writerow(["Agent_name", agent_name])
         w.writerow(["Commission Month", month_label])
         w.writerow([])
         w.writerow(["List of clients"])
-        w.writerow(["Contract_id", "Client_name", "Status", "Agent code", "agent name", "Contract Premium", "Commision due"])
+        w.writerow(["Contract_id", "Client_name", "Status", "Agent code", "Agent name", "Contract Premium", "Commission due"])
         for r in rows:
             w.writerow([r["contract_id"], r["client_name"], r["status"], r["agent_code"], r["agent_name"], r["contract_premium"], r["commission_due"]])
         w.writerow([])
@@ -150,13 +149,13 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
             Paragraph("<b>Commission Statement</b>", styles["Title"]),
             Spacer(1, 6),
             Paragraph(f"<b>Agent_code:</b> {agent_code}", styles["Normal"]),
-            Paragraph(f"<b>agent_name:</b> {agent_name}", styles["Normal"]),
+            Paragraph(f"<b>Agent_name:</b> {agent_name}", styles["Normal"]),
             Paragraph(f"<b>Commission Month:</b> {month_label}", styles["Normal"]),
             Spacer(1, 10),
             Paragraph("<b>List of clients</b>", styles["Heading3"]), Spacer(1, 4)
         ]
 
-        data = [["Contract_id", "Client_name", "Status", "Agent code", "agent name", "Contract Premium", "Commision due"]]
+        data = [["Contract_id", "Client_name", "Status", "Agent code", "Agent name", "Contract Premium", "Commission due"]]
         for r in rows:
             data.append([r["contract_id"], r["client_name"], r["status"], r["agent_code"], r["agent_name"], r["contract_premium"], r["commission_due"]])
         data.append(["", "", "", "", "", "", ""])
@@ -180,22 +179,6 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="statement")
     def statement(self, request):
-        """
-        Build a commission statement for an agent and month.
-
-        Query params (one of the first three is required):
-          - agent_id=<int>
-          - agent_code=<str>
-          - agent=<name>       (partial/case-insensitive)
-          - month=YYYY-MM or YYYY-MM-DD
-          - export=json|csv|pdf|email   (default json)
-          - save=true|false    (default false)  -> persist rows (arrears-friendly)
-
-        Notes:
-          - Commission is 'in arrears'; you will typically call for the PREVIOUS month on the 1st.
-          - Only Active policies earn commission.
-          - Commission Due = monthly_premium * 0.1
-        """
         agent_id = request.query_params.get("agent_id")
         agent_code = request.query_params.get("agent_code")
         agent_name_param = request.query_params.get("agent")
@@ -203,13 +186,11 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
         save = (request.query_params.get("save") or "false").lower().strip() == "true"
         month_raw = request.query_params.get("month")
 
-        # Parse month
         month_start = self._parse_month(month_raw)
         if not month_start:
             return Response({"detail": "Invalid or missing 'month'. Use YYYY-MM or YYYY-MM-DD."}, status=400)
         month_label = month_start.strftime("%b-%y")
 
-        # Resolve agent
         agent = None
         if agent_id:
             try:
@@ -223,21 +204,17 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
         if not agent:
             return Response({"detail": "Agent not found. Use 'agent_id', 'agent_code' or 'agent' (name)."}, status=404)
 
-        # Build rows (and optionally persist)
         rows, tot_prem, tot_comm = self._build_rows_for_agent_month(agent, month_start, save=save)
         agent_label = agent.agent_code
         agent_full = f"{agent.agent_name} {agent.agent_surname}"
 
-        # Return/export
         if export == "csv":
             return self._csv(agent_label, agent_full, month_label, rows, tot_prem, tot_comm)
         if export == "pdf":
             return self._pdf(agent_label, agent_full, month_label, rows, tot_prem, tot_comm)
         if export == "email":
-            # send PDF (or CSV) to agent.email if available
             if not getattr(agent, "email", None):
                 return Response({"detail": "Agent has no email configured."}, status=400)
-            # build PDF bytes in memory
             pdf_resp = self._pdf(agent_label, agent_full, month_label, rows, tot_prem, tot_comm)
             content = pdf_resp.content
             filename = f"commission_{agent_label}_{month_label}.pdf".replace(" ", "_").lower()
@@ -248,7 +225,6 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
             email.send(fail_silently=False)
             return Response({"detail": f"Emailed statement to {agent.email}", "agent_code": agent_label, "month": month_label})
 
-        # Default: JSON
         return Response({
             "agent_code": agent_label,
             "agent_name": agent_full,
@@ -260,3 +236,60 @@ class CommissionRecordViewSet(viewsets.ReadOnlyModelViewSet):
             "saved": save,
         })
 
+
+# ---- Optional admin view for manual trigger ----
+from django.shortcuts import render
+from django.contrib import messages
+from commissions.services import generate_commissions_for_month, compute_commission
+
+def run_commissions_view(request):
+    agents = Agent.objects.all()
+
+    if request.method == "POST":
+        month_str = request.POST.get("month")
+        agent_id = request.POST.get("agent_id")
+
+        if not month_str:
+            messages.error(request, "Please select a month.")
+        else:
+            try:
+                year, month = map(int, month_str.split("-"))
+                month_start = date(year, month, 1)
+            except Exception:
+                messages.error(request, "Invalid month format.")
+            else:
+                if agent_id:  # specific agent
+                    agent = Agent.objects.filter(id=int(agent_id)).first()
+                    if not agent:
+                        messages.error(request, "Selected agent not found.")
+                    else:
+                        created = updated = skipped = 0
+                        policies = agent.policy_set.all()
+                        for p in policies:
+                            if not p.is_commissionable(month_start):
+                                skipped += 1
+                                continue
+                            commission_due = compute_commission(p.contract_premium)
+                            obj, was_created = CommissionRecord.objects.update_or_create(
+                                policy=p,
+                                commission_month=month_start,
+                                defaults={"agent": p.agent, "commission_due": commission_due}
+                            )
+                            if was_created:
+                                created += 1
+                            else:
+                                updated += 1
+                        messages.success(
+                            request,
+                            f"Commissions for {agent.agent_code} ({month_start:%b %Y}): "
+                            f"{created} created, {updated} updated, {skipped} skipped."
+                        )
+                else:  # all agents
+                    result = generate_commissions_for_month(month_start)
+                    messages.success(
+                        request,
+                        f"All agents commissions for {month_start:%b %Y}: "
+                        f"{result['created']} created, {result['updated']} updated, {result['skipped']} skipped."
+                    )
+
+    return render(request, "admin/commissions/run_monthly_commission.html", {"agents": agents})
