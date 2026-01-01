@@ -28,10 +28,13 @@ DEBUG = ENVIRONMENT == "development"
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
+
+
 if ENVIRONMENT == "production":
-    ALLOWED_HOSTS = ["your-render-service.onrender.com"]  # Replace with your Render URL
-else:
-    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+    ALLOWED_HOSTS += [
+        "micro-insurance-system.onrender.com",
+    ]
+
 
 
 # --------------------------------------------------
@@ -205,8 +208,8 @@ if ENVIRONMENT == "production":
     CSRF_COOKIE_SECURE = True
 
     CSRF_TRUSTED_ORIGINS = [
-        "https://yourdomain.com",
-        "https://www.yourdomain.com",
+        "https://micro-insurance-system.onrender.com",
+        "https://micro-insurance-system.onrender.com",
     ]
 else:
     SECURE_SSL_REDIRECT = False
