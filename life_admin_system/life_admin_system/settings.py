@@ -29,7 +29,10 @@ DEBUG = ENVIRONMENT == "development"
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 if ENVIRONMENT == "production":
-    ALLOWED_HOSTS += ["yourdomain.com", "www.yourdomain.com"]
+    ALLOWED_HOSTS = ["your-render-service.onrender.com"]  # Replace with your Render URL
+else:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
 
 # --------------------------------------------------
 # APPLICATIONS
@@ -102,15 +105,15 @@ TEMPLATES = [
     },
 ]
 
-# --------------------------------------------------
-# DATABASE
-# --------------------------------------------------
+import dj_database_url  # Add this at the top
+
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",  # fallback for local dev
+        conn_max_age=600,  # keeps connections alive for efficiency
+    )
 }
+
 
 # --------------------------------------------------
 # AUTH

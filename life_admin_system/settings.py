@@ -30,7 +30,8 @@ DEBUG = ENVIRONMENT == "development"
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 if ENVIRONMENT == "production":
-    ALLOWED_HOSTS += ["your-heroku-app.herokuapp.com", "www.yourdomain.com"]
+    ALLOWED_HOSTS += ["life-admin-system.onrender.com"]
+
 
 # --------------------------------------------------
 # APPLICATIONS
@@ -204,16 +205,10 @@ SECURE_BROWSER_XSS_FILTER = True
 # HTTPS / COOKIES (PRODUCTION ONLY)
 # --------------------------------------------------
 if ENVIRONMENT == "production":
-    SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = [
-        "https://your-heroku-app.herokuapp.com",
-        "https://www.yourdomain.com",
+        "https://life-admin-system.onrender.com"
     ]
+
 else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
@@ -237,3 +232,8 @@ CONTENT_SECURITY_POLICY = {
 # AUDIT LOG
 # --------------------------------------------------
 AUDITLOG_INCLUDE_ALL_MODELS = True
+
+
+
+
+
