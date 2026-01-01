@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # **Life Admin System**
 _A Django-based Funeral Affinity & Micro Insurance Management Platform_
 
@@ -642,7 +641,3 @@ http://127.0.0.1:8000/billing/billing-records/
 
 # export to pdf 
 http://localhost:8000/billing/billing-records/statement/?paypoint=feeder&month=2026-01&export=pdf
-=======
-# Capstoneproject
-Simple Life Insurance administration system
->>>>>>> 97feeaa6d7579f3fae839cc2da3ceddb46954790
