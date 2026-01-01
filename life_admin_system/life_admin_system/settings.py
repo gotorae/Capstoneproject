@@ -1,10 +1,6 @@
-"""
-Django settings for life_admin_system project.
-Secure, production-ready configuration.
-"""
-
 from pathlib import Path
 import os
+import dj_database_url  # for Render database config
 
 # --------------------------------------------------
 # BASE
@@ -12,30 +8,31 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --------------------------------------------------
-# ENVIRONMENT
+# ENVIRONMENT / SECURITY
 # --------------------------------------------------
 ENVIRONMENT = os.getenv("DJANGO_ENV", "development")
-
-# --------------------------------------------------
-# SECURITY
-# --------------------------------------------------
 SECRET_KEY = os.getenv(
     "DJANGO_SECRET_KEY",
     "django-insecure-dev-only-change-this-in-production"
 )
-
 DEBUG = ENVIRONMENT == "development"
 
+# --------------------------------------------------
+# ALLOWED HOSTS
+# --------------------------------------------------
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
-
-
-
 if ENVIRONMENT == "production":
-    ALLOWED_HOSTS += [
-        "micro-insurance-system.onrender.com",
-    ]
+    ALLOWED_HOSTS += ["micro-insurance-system.onrender.com"]
 
-
+# --------------------------------------------------
+# DATABASE
+# --------------------------------------------------
+DATABASES = {
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",  # fallback for local dev
+        conn_max_age=600
+    )
+}
 
 # --------------------------------------------------
 # APPLICATIONS
@@ -108,16 +105,6 @@ TEMPLATES = [
     },
 ]
 
-import dj_database_url  # Add this at the top
-
-DATABASES = {
-    "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",  # fallback for local dev
-        conn_max_age=600,  # keeps connections alive for efficiency
-    )
-}
-
-
 # --------------------------------------------------
 # AUTH
 # --------------------------------------------------
@@ -133,7 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # --------------------------------------------------
 # SESSIONS
 # --------------------------------------------------
-SESSION_COOKIE_AGE = 1800  # 30 minutes
+SESSION_COOKIE_AGE = 1800
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
@@ -146,20 +133,17 @@ USE_I18N = True
 USE_TZ = True
 
 # --------------------------------------------------
-# STATIC FILES
+# STATIC & MEDIA
 # --------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# --------------------------------------------------
-# DEFAULT PK
-# --------------------------------------------------
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # --------------------------------------------------
-# DJANGO REST FRAMEWORK
+# REST FRAMEWORK
 # --------------------------------------------------
-
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
@@ -170,7 +154,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
-        "rest_framework.renderers.BrowsableAPIRenderer",  # <-- Add this
+        "rest_framework.renderers.BrowsableAPIRenderer",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
@@ -181,46 +165,44 @@ REST_FRAMEWORK = {
     ],
 }
 
-
 # --------------------------------------------------
 # EMAIL (DEV SAFE)
 # --------------------------------------------------
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # --------------------------------------------------
-# SECURITY HEADERS (MANDATORY)
+# SECURITY HEADERS
 # --------------------------------------------------
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
 # --------------------------------------------------
-# HTTPS / COOKIES (PRODUCTION ONLY)
+# HTTPS / Cookies (Production)
 # --------------------------------------------------
 if ENVIRONMENT == "production":
     SECURE_SSL_REDIRECT = True
-
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-
-    CSRF_TRUSTED_ORIGINS = [
-        "https://micro-insurance-system.onrender.com",
-        "https://micro-insurance-system.onrender.com",
-    ]
 else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
 
 # --------------------------------------------------
-# CONTENT SECURITY POLICY (CSP)
+# CSRF Trusted Origins
 # --------------------------------------------------
+CSRF_TRUSTED_ORIGINS = []
+if ENVIRONMENT == "production":
+    CSRF_TRUSTED_ORIGINS = [
+        "https://micro-insurance-system.onrender.com",
+    ]
+
 # --------------------------------------------------
-# CONTENT SECURITY POLICY (django-csp >= 4.0)
+# CONTENT SECURITY POLICY
 # --------------------------------------------------
 CONTENT_SECURITY_POLICY = {
     "DIRECTIVES": {
@@ -234,14 +216,11 @@ CONTENT_SECURITY_POLICY = {
 }
 
 # --------------------------------------------------
-# AUDIT LOG
+# AUDITLOG
 # --------------------------------------------------
 AUDITLOG_INCLUDE_ALL_MODELS = True
 
-
-
-
-# settings.py
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
-
+# --------------------------------------------------
+# DEFAULT PK
+# --------------------------------------------------
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
