@@ -20,9 +20,12 @@ DEBUG = ENVIRONMENT == "development"
 # --------------------------------------------------
 # ALLOWED HOSTS
 # --------------------------------------------------
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 if ENVIRONMENT == "production":
-    ALLOWED_HOSTS += ["micro-insurance-system.onrender.com"]
+    ALLOWED_HOSTS = [
+        "micro-insurance-system.onrender.com",
+        "www.micro-insurance-system.onrender.com",
+    ]
+
 
 # --------------------------------------------------
 # DATABASE
@@ -199,6 +202,7 @@ CSRF_TRUSTED_ORIGINS = []
 if ENVIRONMENT == "production":
     CSRF_TRUSTED_ORIGINS = [
         "https://micro-insurance-system.onrender.com",
+        "https://www.micro-insurance-system.onrender.com",
     ]
 
 # --------------------------------------------------
