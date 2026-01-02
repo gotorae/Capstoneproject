@@ -20,11 +20,14 @@ DEBUG = ENVIRONMENT == "development"
 # --------------------------------------------------
 # ALLOWED HOSTS
 # --------------------------------------------------
+
 if ENVIRONMENT == "production":
     ALLOWED_HOSTS = [
+        ".onrender.com",  # allows any subdomain of onrender.com
         "micro-insurance-system.onrender.com",
         "www.micro-insurance-system.onrender.com",
     ]
+
 
 
 # --------------------------------------------------
@@ -184,7 +187,7 @@ SECURE_BROWSER_XSS_FILTER = True
 # HTTPS / Cookies (Production)
 # --------------------------------------------------
 if ENVIRONMENT == "production":
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
@@ -205,6 +208,7 @@ if ENVIRONMENT == "production":
         "https://www.micro-insurance-system.onrender.com",
     ]
 
+CSRF_TRUSTED_ORIGINS += ["https://*.onrender.com"]
 # --------------------------------------------------
 # CONTENT SECURITY POLICY
 # --------------------------------------------------
