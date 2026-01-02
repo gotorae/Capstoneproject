@@ -21,12 +21,13 @@ DEBUG = ENVIRONMENT == "development"
 # ALLOWED HOSTS
 # --------------------------------------------------
 
+
 if ENVIRONMENT == "production":
     ALLOWED_HOSTS = [
-        ".onrender.com",  # allows any subdomain of onrender.com
-        "micro-insurance-system.onrender.com",
-        "www.micro-insurance-system.onrender.com",
+        "micro-insurance-system.onrender.com",  # your exact Render domain
+        ".onrender.com",  # wildcard for any Render subdomain
     ]
+
 
 
 
@@ -186,29 +187,26 @@ SECURE_BROWSER_XSS_FILTER = True
 # --------------------------------------------------
 # HTTPS / Cookies (Production)
 # --------------------------------------------------
+
 if ENVIRONMENT == "production":
-    SECURE_SSL_REDIRECT = False
+    ALLOWED_HOSTS = [".onrender.com"]
+    CSRF_TRUSTED_ORIGINS = ["https://*.onrender.com"]
+    SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-else:
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
+
 
 # --------------------------------------------------
 # CSRF Trusted Origins
 # --------------------------------------------------
-CSRF_TRUSTED_ORIGINS = []
-if ENVIRONMENT == "production":
-    CSRF_TRUSTED_ORIGINS = [
+
+
+
+CSRF_TRUSTED_ORIGINS = [
         "https://micro-insurance-system.onrender.com",
-        "https://www.micro-insurance-system.onrender.com",
+        "https://*.onrender.com",
     ]
 
-CSRF_TRUSTED_ORIGINS += ["https://*.onrender.com"]
 # --------------------------------------------------
 # CONTENT SECURITY POLICY
 # --------------------------------------------------
