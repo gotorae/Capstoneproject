@@ -288,3 +288,18 @@ class AgentExportExcelAPIView(APIView):
 
 
 
+
+
+# Debug only – remove after fixing
+from django.conf import settings
+from django.http import JsonResponse
+
+def healthz(request):
+    return JsonResponse({
+        "ENVIRONMENT": getattr(settings, "ENVIRONMENT", None),
+        "DEBUG": getattr(settings, "DEBUG", None),
+        "HTTP_HOST": request.META.get("HTTP_HOST"),
+        "ALLOWED_HOSTS": getattr(settings, "ALLOWED_HOSTS", None),
+        "CSRF_TRUSTED_ORIGINS": getattr(settings, "CSRF_TRUSTED_ORIGINS", None),
+        "SECURE_SSL_REDIRECT": getattr(settings, "SECURE_SSL_REDIRECT", None),
+    })

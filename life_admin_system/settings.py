@@ -14,8 +14,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --------------------------------------------------
 # ENVIRONMENT
-# --------------------------------------------------
-ENVIRONMENT = os.getenv("DJANGO_ENV", "development")
+
+# settings.py
+import os
+
+ENVIRONMENT = os.getenv("DJANGO_ENV", "development").strip().lower()  # <-- normalize
+DEBUG = ENVIRONMENT == "development"
+
 
 # --------------------------------------------------
 # SECURITY

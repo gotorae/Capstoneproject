@@ -31,3 +31,12 @@ urlpatterns = [
 
 
 
+from django.urls import path
+from commissions import views as commissions_views  # adjust if needed
+
+urlpatterns = [
+    # ... your existing routes ...
+    path("healthz/", commissions_views.healthz),  # temporary debug endpoint
+]
+
+
