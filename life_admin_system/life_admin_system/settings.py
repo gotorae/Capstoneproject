@@ -22,11 +22,19 @@ DEBUG = ENVIRONMENT == "development"
 # --------------------------------------------------
 
 
+
+# settings.py
+
 if ENVIRONMENT == "production":
-    ALLOWED_HOSTS = [
-        "micro-insurance-system.onrender.com",  # your exact Render domain
-        ".onrender.com",  # wildcard for any Render subdomain
+    # Temporary override for debugging Bad Request (400)
+    ALLOWED_HOSTS = ["*"]  # ONLY for debugging – remove after fixing
+
+    CSRF_TRUSTED_ORIGINS = [
+        "https://micro-insurance-system.onrender.com",
+        "https://*.onrender.com",
     ]
+else:
+    ALLOWED_HOSTS = ["*"]  # Development can stay open
 
 
 
